@@ -1,0 +1,16 @@
+---
+- name: Ensure domain_name is downloaded
+  get_url:
+    url: https://github.com/neonichu/ruby-domain_name/releases/download/v0.5.99999999/domain_name-0.5.99999999.gem
+    dest: /tmp/domain_name-0.5.99999999.gem
+
+- name: Ensure domain_name is installed
+  gem:
+    name: domain_name
+    gem_source: /tmp/domain_name-0.5.99999999.gem
+    state: present
+
+- name: Ensure xcode-install is installed
+  gem:
+    name: xcode-install
+    state: present
