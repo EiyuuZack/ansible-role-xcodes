@@ -2,10 +2,23 @@
 # Installing a single Xcode version takes a long time (~40min)
 # The --no-switch flag is to avoid calling xcversion select -- it will be done later
 - name: Ensure selected Xcode versions are installed
-  shell: $SHELL -lc 'xcversion install {{ item.version|quote }} --no-switch --url={{ item.url|quote }}' # when using shell always use quote filter to avoid injection
-  args:
-    creates: '{{ xcode_root }}/Xcode-{{ item.version }}.app'
-  loop: "{{ xcodes }}" 
+  block:
+    - name: Enable passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
+      become: yes
+    - shell: $SHELL -lc 'xcversion install {{ item.version|quote }} --no-switch --url={{ item.url|quote }}' # when using shell always use quote filter to avoid injection
+      args:
+        creates: '{{ xcode_root }}/Xcode-{{ item.version }}.app'
+      loop: "{{ xcodes }}"
+  always:
+    - name: Disable passwordless sudo
+      lineinfile:
+        path: /etc/sudoers
+        line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
+        state: absent
+      become: yes
 
 - name: 'Ensure Xcode {{ default_xcode }} is default'
   shell: $SHELL -lc 'xcversion select {{ default_xcode|quote }} --symlink'
