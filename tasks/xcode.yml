@@ -23,7 +23,15 @@
 - name: 'Ensure Xcode {{ default_xcode }} is default'
   shell: $SHELL -lc 'xcversion select {{ default_xcode|quote }} --symlink'
 
-- name: 'Ensure Xcode {{ default_xcode }} is added to local profile'
+- name: Ensure .zprofile exists
+  ansible.builtin.file:
+    path: ~/.zprofile
+    state: touch
+    mode: '0644'
+    modification_time: preserve
+    access_time: preserve
+
+- name: 'Ensure Xcode {{ default_xcode }} is added to .zprofile'
   ansible.builtin.lineinfile:
     path: ~/.zprofile
     regexp: '^export DEVELOPER_DIR='
