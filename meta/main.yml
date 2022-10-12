@@ -1,6 +1,6 @@
 galaxy_info:
   author: EiyuuZack
-  description: 'Ansible role xcode-install for Mac'
+  description: 'Ansible role xcodes for Mac'
   # company: your company (optional)
 
   # If the issue tracker for your role is not on github, uncomment the

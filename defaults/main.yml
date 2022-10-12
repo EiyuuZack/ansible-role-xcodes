@@ -1,7 +1,9 @@
 ---
 xcode_root: '/Applications'
 # Must match one 'version' of an entry of the list variable below
-default_xcode: 12.4
-# A list variable using the following name and format is required, but not provided (no free lunch)
-# xcodes:
-#  - { version: <version>, url: <xip_url> }
+# For some reason xcodes renames Xcode with a patch digit, so we roll with it
+default_xcode: 14.0.0
+xcodes:
+ - 13.0.0
+ - 13.3.0
+ - 14.0.0

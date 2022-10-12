@@ -1,0 +1,27 @@
+---
+# Will speed up Xcode download immensely... or so they say
+- name: Ensure aria2 is installed
+  homebrew:
+    name: aria2
+    state: present
+
+- name: Ensure xcodes is installed
+  homebrew:
+    name: robotsandpencils/made/xcodes
+    state: present
+
+- name: Check if using Oh My Zsh
+  stat:
+    path: ~/.oh-my-zsh
+  register: omz
+  check_mode: false
+
+- name: Ensure Oh My Zsh completions path exists
+  file:
+    path: ~/.oh-my-zsh/completions
+    state: directory
+  when: omz.stat.exists
+
+- name: Ensure xcodes completions are updated
+  shell: $SHELL -lc 'xcodes --generate-completion-script > ~/.oh-my-zsh/completions/_xcodes'
+  when: omz.stat.exists
