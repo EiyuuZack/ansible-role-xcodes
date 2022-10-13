@@ -4,6 +4,9 @@ xcode_root: '/Applications'
 # For some reason xcodes renames Xcode with a patch digit, so we roll with it
 default_xcode: 14.0.0
 xcodes:
- - 13.0.0
- - 13.3.0
- - 14.0.0
+  - 13.0.0
+  - 13.3.0
+  - 14.0.0
+
+extra_install_flags:
+  - --experimental-unxip

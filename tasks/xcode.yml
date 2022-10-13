@@ -7,9 +7,12 @@
         path: /etc/sudoers
         line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
       become: yes
-    - shell: $SHELL -lc 'xcodes install {{ item|quote }} --empty-trash' # when using shell always use quote filter to avoid injection
+    - shell: $SHELL -lc 'xcodes update' # ensure available Xcodes list is updated
+    - shell: $SHELL -lc 'xcodes install {{ item|quote }} --empty-trash {{ extra_install_flags | join(' ') }}' # when using shell always use quote filter to avoid injection
       args:
         creates: '{{ xcode_root }}/Xcode-{{ item }}.app'
+      async: 3600 # accounts for download + install
+      poll: 60
       loop: "{{ xcodes }}"
   always:
     - name: Disable passwordless sudo
