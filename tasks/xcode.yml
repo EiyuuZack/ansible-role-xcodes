@@ -1,26 +1,63 @@
 ---
-# Installing a single Xcode version (no longer?) takes a long time (~60min)
+# When using shell module always use quote filter to avoid injection
+# Downloading and installing a single Xcode version may take a long time (>20m potentially)
+# Since xcodes is not yet capable of overwriting installations, the specified Xcode is always uninstalled first
 - name: Ensure selected Xcode versions are installed
   block:
     - name: Enable passwordless sudo
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sudoers
         line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
-      become: yes
-    - shell: $SHELL -lc 'xcodes update' # ensure available Xcodes list is updated
-    - shell: $SHELL -lc 'xcodes install {{ item|quote }} --empty-trash {{ extra_install_flags | join(' ') }}' # when using shell always use quote filter to avoid injection
+      become: true
+    - name: Ensure Xcode is downloaded
+      ansible.builtin.get_url:
+        url: '{{ item.url }}'
+        dest: '{{ ansible_env.HOME }}/{{ item.name }}'
+        mode: '0644'
+        checksum: '{{ item.checksum }}'
+      async: 600 # 11GB at ~20MBps = 600s
+      poll: 60
+      loop: "{{ xcodes }}"
+    - name: Ensure overlapping Xcode is uninstalled
+      ansible.builtin.shell: $SHELL -lc 'xcodes uninstall {{ item.version | quote }}'
       args:
-        creates: '{{ xcode_root }}/Xcode-{{ item }}.app'
-      async: 3600 # accounts for download + install
+        removes: /Applications/Xcode-{{ item.version }}.app
+      loop: "{{ xcodes }}"
+    - name: Ensure Xcode is installed
+      ansible.builtin.shell: $SHELL -lc 'xcodes install {{ item.version | quote }} --path={{ ansible_env.HOME }}/{{ item.name | quote }} --empty-trash {{ extra_install_flags | join(' ') }}'
+      args:
+        creates: '{{ xcode_root }}/Xcode-{{ item.version }}.app' # somewhat irrelevant given the previous task
+      async: 300
       poll: 60
       loop: "{{ xcodes }}"
   always:
     - name: Disable passwordless sudo
-      lineinfile:
+      ansible.builtin.lineinfile:
         path: /etc/sudoers
         line: '{{ ansible_user }} ALL=(ALL) NOPASSWD: ALL'
         state: absent
-      become: yes
+      become: true
+
+# Installing runtimes will create duplicates if they already exist, best start from scratch
+# Small trick to ignore the result (https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_error_handling.html#ensuring-success-for-command-and-shell)
+- name: Ensure all runtimes are nuked
+  ansible.builtin.shell: $SHELL -lc 'xcrun simctl runtime delete all || true'
+  register: result
+  changed_when: "'No matching images found to delete' not in result.stderr"
+
+- name: Ensure Downloads directory exists # seems to be hardcoded for runtime installation
+  ansible.builtin.file:
+    path: '{{ ansible_env.HOME }}/Downloads'
+    state: directory
+    mode: '0700'
+
+# Keep runtime DMG around to accelerate future installations
+- name: Ensure iOS runtime is installed
+  ansible.builtin.shell: $SHELL -lc 'xcodes update; xcodes runtimes install "{{ item.runtime }}" --keep-archive'
+  async: 300 # 7GB at ~240MBps (aria2) = 30s + install
+  poll: 60
+  loop: "{{ xcodes }}"
+  changed_when: true # signal ansible this is not idempotent
 
 - name: Ensure .zprofile exists
   ansible.builtin.file:

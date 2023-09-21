@@ -1,13 +1,9 @@
 ---
-# Will speed up Xcode download immensely... or so they say
-- name: Ensure aria2 is installed
-  homebrew:
-    name: aria2
-    state: present
-
-- name: Ensure xcodes is installed
-  homebrew:
-    name: robotsandpencils/made/xcodes
+- name: Ensure aria2 and xcodes are installed
+  community.general.homebrew:
+    name:
+      - aria2 # Will speed up Xcode and Runtime download immensely... or so they say
+      - xcodesorg/made/xcodes
     state: present
 
 - name: Check if using Oh My Zsh
